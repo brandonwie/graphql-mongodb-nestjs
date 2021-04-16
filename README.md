@@ -1,12 +1,17 @@
-# GraphQL - MongoDB - NestJS
+# NestJS - MongoDB - GraphQL
 
-A simple "school management" backend using GraphQL, MongoDB based on NestJS
+<a href="https://www.typescriptlang.org/"><img src="https://img.icons8.com/color/48/000000/typescript.png" alt="TypeScript Logo"/></a>
+<a href="https://nestjs.com"><img src="https://user-images.githubusercontent.com/13108166/32161516-25ee8a3c-bd56-11e7-9d49-76faed577e1a.png" alt="NestJS Logo" height="48" width="48"/></a>
+<a href="https://graphql.org/"><img src="https://img.icons8.com/color/48/000000/graphql.png" alt="GraphQL Logo" /></a>
+<a href="https://www.mongodb.com/"><img src="https://img.icons8.com/color/48/000000/mongodb.png" alt="MongoDB Logo"></a>
+
+A simple "School Management App" backend using GraphQL, MongoDB upon NestJS
+
+---
 
 # Development Note
 
-## Project Overview
-
-> **School Management**
+## Project Overview - **School Management**
 
 1. Lesson Resolver (GraphQL) - LessonService (NestJS)
 
@@ -20,13 +25,27 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 \*Make sure your docker server up and running before `npm start`
 
 - [Docker](https://www.docker.com/): runs MongoDB server
-  - `$ docker run --name mongo -p 27017:27017 -d mongo`
+
+  ```console
+  docker run --name mongo -p 27017:27017 -d mongo
+  ```
+
 - [Robo 3T](https://robomongo.org/download): an open-source MongoDB management tool.
 
 ## Installation process
 
-- Install CLI: `$ npm install @nestjs/cli`
-- Initialize project: `$ nest new APP_NAME`
+- Install CLI:
+
+  ```console
+  npm install @nestjs/cli
+  ```
+
+- Initialize project
+
+  ```console
+  nest new APP_NAME
+  ```
+
 - Install NPM packages
   - [graphql](https://www.npmjs.com/package/graphql): core GraphQL package that actually drives GraphQL
   - [graphql-tools](https://www.npmjs.com/package/graphql-tools): provides some extra tooling built around GraphQL such as Playground
@@ -60,7 +79,12 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 
 ### Lesson Module
 
-1. Create the module: `$ nest g module lesson`
+1. Create the module:
+
+   ```console
+   nest g module lesson
+   ```
+
 2. Create `lesson.type.ts` file in lesson folder
 
    ```typescript
@@ -118,7 +142,11 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
    export class LessonModule {}
    ```
 
-5. Start development server: `$ npm run start:dev`
+5. Start development server
+
+   ```console
+   npm run start:dev
+   ```
 
 6. Navigate to `localhost:3000/graphql` on your browser and play with the test query!
 
@@ -126,7 +154,11 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 
 ## Persistence: TypeORM and MongoDB
 
-1. Install required dependencies: `$ npm install typeorm @nestjs/typeorm mongodb @types/mongodb`
+1. Install required dependencies
+
+   ```console
+   npm install typeorm @nestjs/typeorm mongodb @types/mongodb
+   ```
 
    - [typeorm](https://www.npmjs.com/package/typeorm): Object-relational mapping library (older than NestJS)
    - [@nestjs/typeorm](https://www.npmjs.com/package/@nestjs/typeorm): TypeORM module for Nest
@@ -192,7 +224,12 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 "Service" defines object-relations (ORM).</br>
 On the other hand, "Resolver" enables communicating with DB using GraphQL queries
 
-1. Create service: `$ nest g service lesson --no-spec`
+1. Create service:
+
+   ```console
+   nest g service lesson --no-spec
+   ```
+
 2. Won't create separate Lesson Repository as it's focused on GraphQL part
 3. Create methods in service
 
@@ -281,7 +318,18 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
 
 ---
 
-## Validation
+## Validation (DTO - Data Transfer Object)
+
+1. Install helper NPM packages
+
+   ```console
+   npm install class-validator class-transformer
+   ```
+
+   - [class-validator](https://www.npmjs.com/package/class-validator): allows use of decorator/non-decorator based validation
+   - [class-transformer](https://www.npmjs.com/package/class-transformer): allows transforming plain object to some instance of class and versa
+
+2.
 
 ---
 
