@@ -6,7 +6,7 @@ export class Lesson {
   @ObjectIdColumn()
   _id: string;
 
-  @PrimaryColumn()
+  @PrimaryColumn() // public id
   id: string;
 
   @Column()

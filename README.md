@@ -17,9 +17,11 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 
 ## Application Setup
 
+\*Make sure your docker server up and running before `npm start`
+
 - [Docker](https://www.docker.com/): runs MongoDB server
-  - `terminal$ docker run --name mongo -p 27017:27017 -d mongo`
-- [Robo 3T](https://robomongo.org/download): an open-source database GUI editor
+  - `$ docker run --name mongo -p 27017:27017 -d mongo`
+- [Robo 3T](https://robomongo.org/download): an open-source MongoDB management tool.
 
 ## Installation process
 
@@ -30,6 +32,8 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
   - [graphql-tools](https://www.npmjs.com/package/graphql-tools): provides some extra tooling built around GraphQL such as Playground
   - [apollo-server-express](https://www.npmjs.com/package/apollo-server-express): a popular GraphQL server package for NodeJS
   - [@nestjs/graphql](https://www.npmjs.com/package/@nestjs/graphql): official package, integrate into NestJS ecosystem
+
+---
 
 ## Setup Modules
 
@@ -118,7 +122,9 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 
 6. Navigate to `localhost:3000/graphql` on your browser and play a bit!
 
-### Persistence: TypeORM and MongoDB
+---
+
+## Persistence: TypeORM and MongoDB
 
 1. Install required dependencies: `$ npm install typeorm @nestjs/typeorm mongodb @types/mongodb`
 
@@ -178,6 +184,43 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
      endDate: string;
    }
    ```
+
+## LessonService and createLesson method
+
+"Service" defines object-relations (ORM).</br>
+On the other hand, "Resolver" is communicating with DB using GraphQL queries
+
+1. Create service: `$ nest g service lesson --no-spec`
+2. Won't create separate Lesson Repository as it's focused on GraphQL part
+
+   ```typescript
+   // lesson.service.ts
+   import { Injectable } from '@nestjs/common';
+   import { InjectRepository } from '@nestjs/typeorm';
+   import { Lesson } from './lesson.entity';
+   import { Repository } from 'typeorm';
+   import { v4 as uuid } from 'uuid';
+
+   @Injectable()
+   export class LessonService {
+     constructor(
+       @InjectRepository(Lesson) private lessonRepository: Repository<Lesson>,
+     ) {}
+
+     createLesson(name, startDate, endDate): Promise<Lesson> {
+       const lesson = this.lessonRepository.create({
+         id: uuid(),
+         name,
+         startDate,
+         endDate,
+       });
+
+       return this.lessonRepository.save(lesson);
+     }
+   }
+   ```
+
+3.
 
 ---
 
