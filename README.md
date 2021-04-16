@@ -25,8 +25,8 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 
 ## Installation process
 
-- Install CLI: `npm install @nestjs/cli`
-- Initialize project: `nest new APP_NAME`
+- Install CLI: `$ npm install @nestjs/cli`
+- Initialize project: `$ nest new APP_NAME`
 - Install NPM packages
   - [graphql](https://www.npmjs.com/package/graphql): core GraphQL package that actually drives GraphQL
   - [graphql-tools](https://www.npmjs.com/package/graphql-tools): provides some extra tooling built around GraphQL such as Playground
@@ -58,10 +58,10 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
    export class AppModule {}
    ```
 
-### Lesson
+### Lesson Module
 
-1. create the module: `nest g module lesson`
-2. create `lesson.type.ts` file in lesson folder
+1. Create the module: `$ nest g module lesson`
+2. Create `lesson.type.ts` file in lesson folder
 
    ```typescript
    // lesson.type.ts
@@ -83,7 +83,7 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
    }
    ```
 
-3. create `lesson.resolver.ts`
+3. Create `lesson.resolver.ts`
 
    ```typescript
    // lesson.resolver.ts
@@ -105,7 +105,7 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
    }
    ```
 
-4. add the resolver to the LessonModule
+4. Add the resolver to the LessonModule
 
    ```typescript
    // lesson.module.ts
@@ -120,7 +120,7 @@ A simple "school management" backend using GraphQL, MongoDB based on NestJS
 
 5. Start development server: `$ npm run start:dev`
 
-6. Navigate to `localhost:3000/graphql` on your browser and play a bit!
+6. Navigate to `localhost:3000/graphql` on your browser and play with the test query!
 
 ---
 
@@ -237,6 +237,7 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
 
    @Resolver((of) => LessonType)
    export class LessonResolver {
+     // you can use LessonService's methods in LessonResolver
      constructor(private lessonService: LessonService) {}
 
      @Query((returns) => LessonType)
