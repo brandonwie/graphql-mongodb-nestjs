@@ -78,7 +78,7 @@ A simple "School Management App" backend using GraphQL, MongoDB upon NestJS
    export class AppModule {}
    ```
 
-### Lesson Module
+## Lesson Module
 
 1. Create the module:
 
@@ -225,7 +225,7 @@ A simple "School Management App" backend using GraphQL, MongoDB upon NestJS
 "Service" defines object-relations (ORM).</br>
 On the other hand, "Resolver" enables communicating with DB using GraphQL queries
 
-1. Create service:
+1. Create service: (without test file)
 
    ```console
    nest g service lesson --no-spec
@@ -296,7 +296,7 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
 
 5. Test the Query and Mutation in GraphQL Playground
 
-   ```graphql
+   ```type
    # returns "id" and "name" of created instance
    mutation {
      createLesson(
@@ -330,4 +330,224 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
    - [class-validator](https://www.npmjs.com/package/class-validator): allows use of decorator/non-decorator based validation
    - [class-transformer](https://www.npmjs.com/package/class-transformer): allows transforming plain object to some instance of class and versa
 
-2.
+2. Create `lesson.input.ts` as DTO, use `class-validator` package
+
+   ```typescript
+   // lesson.input.ts
+   import { Field, InputType } from '@nestjs/graphql';
+   import { MinLength, IsDateString } from 'class-validator';
+
+   @InputType()
+   export class CreateLessonInput {
+     @MinLength(1)
+     @Field()
+     name: string;
+
+     @IsDateString()
+     @Field()
+     startDate: string;
+
+     @IsDateString()
+     @Field()
+     endDate: string;
+   }
+   ```
+
+3. Connect the ValidationPipe to `main.ts`
+
+   ```typescript
+   // main.ts
+   import { ValidationPipe } from '@nestjs/common';
+   import { NestFactory } from '@nestjs/core';
+   import { AppModule } from './app.module';
+
+   async function bootstrap() {
+     const app = await NestFactory.create(AppModule);
+     app.useGlobalPipes(new ValidationPipe()); // here
+     await app.listen(3000);
+   }
+   bootstrap();
+   ```
+
+4. Change `createLesson` with newly created DTO `CreateLessonInput`
+
+   ```typescript
+   // lesson.service.ts
+   async createLesson(createLessonInput: CreateLessonInput): Promise<Lesson> {
+    const { name, startDate, endDate } = createLessonInput;
+
+    const lesson = this.lessonRepository.create({
+      id: uuid(),
+      name,
+      startDate,
+      endDate,
+    });
+
+   ```
+
+5. Refactor Resolver `lesson.resolve.ts`
+
+   ```typescript
+   import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+   import { CreateLessonInput } from './lesson.input';
+   import { LessonService } from './lesson.service';
+   import { LessonType } from './lesson.type';
+
+   @Resolver((of) => LessonType)
+   export class LessonResolver {
+     constructor(private lessonService: LessonService) {}
+
+     @Query((returns) => LessonType)
+     lesson(@Args('id') id: string) {
+       return this.lessonService.getLesson(id);
+     }
+     // Three "Args" refactored as one with lesson DTO
+     @Mutation((returns) => LessonType)
+     createLesson(
+       @Args('createLessonInput') createLessonInput: CreateLessonInput,
+     ) {
+       return this.lessonService.createLesson(createLessonInput);
+     }
+   }
+   ```
+
+6. Check the schema on `localhost:3000/graphql`.
+
+   ```typescript
+   type Lesson {
+     id: ID!
+     name: String!
+     startDate: String!
+     endDate: String!
+   }
+
+   type Query {
+     lesson(id: String!): Lesson!
+   }
+
+   type Mutation {
+     createLesson(createLessonInput: CreateLessonInput!): Lesson!
+   }
+
+   input CreateLessonInput {
+     name: String!
+     startDate: String!
+     endDate: String!
+   }
+   ```
+
+7. Try the Mutation example:
+
+   ```typescript
+   mutation {
+      createLesson(
+        createLessonInput: {
+          name: "Test Class"
+          startDate: "2021-04-16T18:00:00Z"
+          endDate: "2021-04-16T18:30:00Z"
+        }
+      ) {
+        name
+        id
+      }
+   }
+   ```
+
+---
+
+## Get All Lessons GraphQL Query
+
+1. create `getLessions()` method
+
+   ```typescript
+    // lesson.service.ts
+    async getLessons(): Promise<Lesson[]> {
+    return this.lessonRepository.find();
+   }
+   ```
+
+2. create `lessons` query
+
+   ```typescript
+   // lesson.resolver.ts
+   // [LessonType] === LessonType[] in GraphQL
+   @Query((returns) => [LessonType])
+   lessons() {
+   return this.lessonService.getLessons();
+   }
+   ```
+
+3. Check out `localhost:3000/graphql` for the query created
+
+---
+
+## Student Module
+
+1. Create Student Module / Service
+
+   ```console
+   nest g module student
+   nest g service student
+   ```
+
+2. Create `student.entity.ts` and define Student entity
+
+   ```typescript
+   // student.entity.ts
+   import { Column, Entity, ObjectIdColumn, PrimaryColumn } from 'typeorm';
+
+   @Entity()
+   export class Student {
+     @ObjectIdColumn()
+     _id: string;
+
+     @PrimaryColumn()
+     id: string;
+
+     @Column()
+     firstName: string;
+
+     @Column()
+     lastName: string;
+   }
+   ```
+
+3. Connect the entity into Student Module
+
+   ```typescript
+   import { Module } from '@nestjs/common';
+   import { TypeOrmModule } from '@nestjs/typeorm';
+   import { Student } from './student.entity';
+   import { StudentService } from './student.service';
+
+   @Module({
+     imports: [TypeOrmModule.forFeature([Student])],
+     providers: [StudentService],
+   })
+   export class StudentModule {}
+   ```
+
+4. Connect the entity into App Module
+
+   ```typescript
+   @Module({
+     imports: [
+       TypeOrmModule.forRoot({
+         type: 'mongodb',
+         url: 'mongodb://localhost/school',
+         synchronize: true,
+         useUnifiedTopology: true,
+         entities: [Lesson, Student],
+       }),
+       GraphQLModule.forRoot({
+         //save schema in memory
+         autoSchemaFile: true,
+       }),
+       LessonModule,
+       StudentModule,
+     ],
+   })
+   export class AppModule {}
+   ```
+
+5. Create Student Mutation
