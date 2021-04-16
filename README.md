@@ -14,11 +14,11 @@ A simple "School Management App" backend using GraphQL, MongoDB upon NestJS
 
 ## Project Overview - **School Management**
 
-1. Lesson Resolver (GraphQL) - LessonService (NestJS)
+1. Lesson Resolver (GraphQL) - LessonService (TypeORM)
 
    - entity: name, startDate, endDate, students
 
-2. Student Resolver (GraphQL) - LessonService (NestJS)
+2. Student Resolver (GraphQL) - LessonService (TypeORM)
    - entity: firstName, lastName
 
 ## Application Setup
