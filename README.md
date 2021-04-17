@@ -815,3 +815,56 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
 ## Resolve "students" Field in Lesson
 
 At this point, Lesson does not support Student schema. So we are going to connect those two schemas.
+
+1. Test what object returns when using `@ResolveField()` decorator
+
+   ```typescript
+   // lesson.resolver.ts
+   @ResolveField()
+   async students(@Parent() lesson: Lesson) {
+    console.log(lesson);
+   }
+   ```
+
+   ```graphql
+   # GraphQL Query
+   mutation {
+     createLesson(
+       createLessonInput: {
+         name: "Test lesson with students1"
+         startDate: "2021-04-16T18:00:00Z"
+         endDate: "2021-04-16T18:30:00Z"
+         students: [
+           "9a4445bc-4c54-4a20-b2e8-fece6f0d9714"
+           "f72879cf-5a0c-49c9-8ab4-0c4dff0ca8a0"
+           "7a6ca555-8506-4bae-95dd-1f460d59c13c"
+         ]
+       }
+     ) {
+       id
+       name
+       startDate
+       endDate
+       students
+     }
+   }
+   ```
+
+   Execute the query.
+
+   Here is the result on your console.
+
+   ```console
+   Lesson {
+   id: '5f456642-23e5-4e69-8f47-907954e011f5',
+   name: 'Test lesson with students1',
+   startDate: '2021-04-16T18:00:00Z',
+   endDate: '2021-04-16T18:30:00Z',
+   students: [
+    '9a4445bc-4c54-4a20-b2e8-fece6f0d9714',
+    'f72879cf-5a0c-49c9-8ab4-0c4dff0ca8a0',
+    '7a6ca555-8506-4bae-95dd-1f460d59c13c'
+   ],
+   _id: 607a52c703effaed86281cd4
+   }
+   ```
