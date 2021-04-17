@@ -764,28 +764,26 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
 
 ## Improvement: Assign Students upon Lesson creation
 
-1. Update `lesson.type.ts`
+1. Update `lesson.input.ts`
 
    ```typescript
-   import { ObjectType, Field, ID } from '@nestjs/graphql';
-   import { IsUUID } from 'class-validator';
-   import { StudentType } from '../student/student.type';
+   import { Field, ID, InputType } from '@nestjs/graphql';
+   import { MinLength, IsDateString, IsUUID } from 'class-validator';
 
-   @ObjectType('Lesson')
-   export class LessonType {
-     @Field((type) => ID)
-     id: string;
-
+   @InputType()
+   export class CreateLessonInput {
+     @MinLength(1)
      @Field()
      name: string;
 
+     @IsDateString()
      @Field()
      startDate: string;
 
+     @IsDateString()
      @Field()
      endDate: string;
 
-     //Update Here
      @IsUUID('4', { each: true })
      @Field((type) => [ID], { defaultValue: [] })
      students: string[];
@@ -794,21 +792,21 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
 
 2. Update `createLesson` in `lesson.service.ts`
 
-   ```typescript
-   async createLesson(createLessonInput: CreateLessonInput): Promise<Lesson> {
-    const { name, startDate, endDate, students } = createLessonInput;
+```typescript
+async createLesson(createLessonInput: CreateLessonInput): Promise<Lesson> {
+ const { name, startDate, endDate, students } = createLessonInput;
 
-    const lesson = this.lessonRepository.create({
-      id: uuid(),
-      name,
-      startDate,
-      endDate,
-      students,
-    });
+ const lesson = this.lessonRepository.create({
+   id: uuid(),
+   name,
+   startDate,
+   endDate,
+   students,
+ });
 
-    return this.lessonRepository.save(lesson);
-   }
-   ```
+ return this.lessonRepository.save(lesson);
+}
+```
 
 ---
 
@@ -868,3 +866,68 @@ At this point, Lesson does not support Student schema. So we are going to connec
    _id: 607a52c703effaed86281cd4
    }
    ```
+
+2. Create `getManyStudents` method in `student.service.ts`
+
+   ```typescript
+   // student.service.ts
+   async getManyStudents(studentIds: string[]):Promise<Student[]> {
+    return this.studentRepository.find({
+      where: {
+        id: {
+          $in: studentIds,
+        },
+      },
+    });
+   }
+
+   ```
+
+3. Export class **StudentService** so that **LessonModule** can use it
+
+   ```typescript
+   // student.module.ts
+   @Module({
+     imports: [TypeOrmModule.forFeature([Student])],
+     providers: [StudentResolver, StudentService],
+     exports: [StudentService], // Here
+   })
+   export class StudentModule {}
+   ```
+
+4. Import **StudentModule** in **LessonModule**
+
+   ```typescript
+   // lesson.module.ts
+   @Module({
+     imports: [TypeOrmModule.forFeature([Lesson]), StudentModule], // Here
+     providers: [LessonResolver, LessonService],
+   })
+   export class LessonModule {}
+   ```
+
+5. Inject **StudentService** in **LessonResolver**'s constructor and it's ready to use
+
+   ```typescript
+   // lesson.resolver.ts
+    @Resolver((of) => LessonType)
+   export class LessonResolver {
+   constructor(
+    private lessonService: LessonService,
+    private studentService: StudentService,
+   ) {}
+   ...
+   }
+   ```
+
+6. Implement
+
+   ```typescript
+   // lesson.resolver.ts
+   @ResolveField()
+   async students(@Parent() lesson: Lesson) {
+    return this.studentService.getManyStudents(lesson.students);
+   }
+   ```
+
+7. Following GraphQL Query

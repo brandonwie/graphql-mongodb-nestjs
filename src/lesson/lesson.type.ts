@@ -16,7 +16,6 @@ export class LessonType {
   @Field()
   endDate: string;
 
-  @IsUUID('4', { each: true })
-  @Field((type) => [ID], { defaultValue: [] })
+  @Field((type) => [StudentType])
   students: string[];
 }
