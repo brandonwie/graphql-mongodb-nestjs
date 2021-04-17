@@ -550,4 +550,268 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
    export class AppModule {}
    ```
 
-5. Create Student Mutation
+5. Other Student files
+
+   ```typescript
+   // student.service.ts
+   import { Injectable } from '@nestjs/common';
+   import { InjectRepository } from '@nestjs/typeorm';
+   import { Repository } from 'typeorm';
+   import { CreateStudentInput } from './student.input';
+   import { Student } from './student.entity';
+   import { v4 as uuid } from 'uuid';
+
+   @Injectable()
+   export class StudentService {
+     constructor(
+       @InjectRepository(Student)
+       private studentRepository: Repository<Student>,
+     ) {}
+
+     async getStudent(id: string): Promise<Student> {
+       return this.studentRepository.findOne({ where: id });
+     }
+
+     async getStudents(): Promise<Student[]> {
+       return this.studentRepository.find();
+     }
+
+     async createStudent(
+       createStudentInput: CreateStudentInput,
+     ): Promise<Student> {
+       const { firstName, lastName } = createStudentInput;
+       const student = this.studentRepository.create({
+         id: uuid(),
+         firstName,
+         lastName,
+       });
+
+       return this.studentRepository.save(student);
+     }
+   }
+   ```
+
+   ```typescript
+   // student.resolver.ts
+   import { Resolver, Query, Args, Mutation } from '@nestjs/graphql';
+   import { Student } from './student.entity';
+   import { StudentService } from './student.service';
+   import { StudentType } from './student.type';
+   import { CreateStudentInput } from './student.input';
+
+   // init Resolver
+   @Resolver((of) => StudentType)
+   export class StudentResolver {
+     // inject Student Service
+     constructor(private studentService: StudentService) {}
+
+     @Query((returns) => StudentType)
+     student(@Args('id') id: string): Promise<Student> {
+       return this.studentService.getStudent(id);
+     }
+
+     @Query((returns) => [StudentType])
+     students(): Promise<Student[]> {
+       return this.studentService.getStudents();
+     }
+
+     @Mutation((returns) => StudentType)
+     createStudent(
+       @Args('createStudentInput') createStudentInput: CreateStudentInput,
+     ): Promise<Student> {
+       return this.studentService.createStudent(createStudentInput);
+     }
+   }
+   ```
+
+   ```typescript
+   //student.input.ts (DTO)
+   import { Field, InputType } from '@nestjs/graphql';
+   import { Length } from 'class-validator';
+
+   @InputType()
+   export class CreateStudentInput {
+     @Length(1, 225)
+     @Field()
+     firstName: string;
+
+     @Length(1, 225)
+     @Field()
+     lastName: string;
+   }
+   ```
+
+---
+
+## Assign Students to Lesson (GraphQL Mutation)
+
+1. Add a new column "students' id array" to Lesson entity
+
+   ```typescript
+   // lesson.entity.ts
+   import { Entity, PrimaryColumn, Column, ObjectIdColumn } from 'typeorm';
+
+   @Entity()
+   export class Lesson {
+     @ObjectIdColumn()
+     _id: string;
+
+     @PrimaryColumn()
+     id: string;
+
+     @Column()
+     name: string;
+
+     @Column()
+     startDate: string;
+
+     @Column()
+     endDate: string;
+
+     @Column() // HERE!
+     students: string[];
+   }
+   ```
+
+2. Modify StudentType as well
+
+   ```typescript
+   // lesson.type.ts
+   import { ObjectType, Field, ID } from '@nestjs/graphql';
+   import { StudentType } from '../student/student.type';
+
+   @ObjectType('Lesson')
+   export class LessonType {
+     @Field((type) => ID)
+     id: string;
+
+     @Field()
+     name: string;
+
+     @Field()
+     startDate: string;
+
+     @Field()
+     endDate: string;
+     // HERE!
+     @Field((type) => [StudentType])
+     students: string[];
+   }
+   ```
+
+3. Create DTO
+
+   ```typescript
+   import { InputType, Field, ID } from '@nestjs/graphql';
+   import { IsUUID } from 'class-validator';
+
+   @InputType()
+   export class AssignStudentsToLessonInput {
+     @IsUUID()
+     @Field((type) => ID)
+     lessonId: string;
+
+     @IsUUID('4', { each: true })
+     @Field((type) => [ID])
+     studentIds: string[];
+   }
+   ```
+
+4. Add `assignStudentsToLesson` in Service
+
+   ```typescript
+   // lesson.service.ts
+   async assignStudentsToLesson(
+    lessonId: string,
+    studentIds: string[],
+   ): Promise<Lesson> {
+    const lesson = await this.lessonRepository.findOne({
+      where: { id: lessonId },
+    });
+
+    lesson.students = [...lesson.students, ...studentIds];
+    return this.lessonRepository.save(lesson);
+   }
+   ```
+
+   ```typescript
+   // lesson.service.ts
+   // In createLesson method
+   const lesson = this.lessonRepository.create({
+     id: uuid(),
+     name,
+     startDate,
+     endDate,
+     students: [], // Add this line
+   });
+   ```
+
+   Creating repository in this way is not recommended and it is used for the sake of tutorial
+
+5. Add `assignStudentsToLesson` in Resolver
+
+   ```typescript
+   // lesson.resolver.ts
+     @Mutation((returns) => LessonType)
+   assignStudentsToLesson(
+     @Args('assignStudentsToLessonInput')
+     assignStudentsToLessonInput: AssignStudentsToLessonInput,
+   ) {
+     const { lessonId, studentIds } = assignStudentsToLessonInput;
+     return this.lessonService.assignStudentsToLesson(lessonId, studentIds);
+   }
+   ```
+
+## Improvement: Assign Students upon Lesson creation
+
+1. Update `lesson.type.ts`
+
+   ```typescript
+   import { ObjectType, Field, ID } from '@nestjs/graphql';
+   import { IsUUID } from 'class-validator';
+   import { StudentType } from '../student/student.type';
+
+   @ObjectType('Lesson')
+   export class LessonType {
+     @Field((type) => ID)
+     id: string;
+
+     @Field()
+     name: string;
+
+     @Field()
+     startDate: string;
+
+     @Field()
+     endDate: string;
+
+     //Update Here
+     @IsUUID('4', { each: true })
+     @Field((type) => [ID], { defaultValue: [] })
+     students: string[];
+   }
+   ```
+
+2. Update `createLesson` in `lesson.service.ts`
+
+   ```typescript
+   async createLesson(createLessonInput: CreateLessonInput): Promise<Lesson> {
+    const { name, startDate, endDate, students } = createLessonInput;
+
+    const lesson = this.lessonRepository.create({
+      id: uuid(),
+      name,
+      startDate,
+      endDate,
+      students,
+    });
+
+    return this.lessonRepository.save(lesson);
+   }
+   ```
+
+---
+
+## Resolve "students" Field in Lesson
+
+At this point, Lesson does not support Student schema. So we are going to connect those two schemas.

@@ -1,4 +1,6 @@
 import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { IsUUID } from 'class-validator';
+import { StudentType } from '../student/student.type';
 
 @ObjectType('Lesson')
 export class LessonType {
@@ -13,4 +15,8 @@ export class LessonType {
 
   @Field()
   endDate: string;
+
+  @IsUUID('4', { each: true })
+  @Field((type) => [ID], { defaultValue: [] })
+  students: string[];
 }
