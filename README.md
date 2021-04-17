@@ -4,6 +4,7 @@
 <a href="https://nestjs.com"><img src="https://user-images.githubusercontent.com/13108166/32161516-25ee8a3c-bd56-11e7-9d49-76faed577e1a.png" alt="NestJS Logo" height="48" width="48"/></a>
 <a href="https://www.mongodb.com/"><img src="https://img.icons8.com/color/48/000000/mongodb.png" alt="MongoDB Logo"></a>
 <a href="https://graphql.org/"><img src="https://img.icons8.com/color/48/000000/graphql.png" alt="GraphQL Logo" /></a>
+<a href="https://typeorm.io/"><img src="https://img.stackshare.io/service/7419/20165699.png" alt="TypeORM Logo" height="48"/></a>
 <a href="https://www.docker.com/"><img src="https://img.icons8.com/color/48/000000/docker.png" alt="Docker Logo"/></a>
 
 A simple "School Management App" backend using GraphQL, MongoDB upon NestJS
@@ -764,7 +765,7 @@ On the other hand, "Resolver" enables communicating with DB using GraphQL querie
 
 ## Improvement: Assign Students upon Lesson creation
 
-1. Update `lesson.input.ts`
+1. Update DTO `lesson.input.ts`
 
    ```typescript
    import { Field, ID, InputType } from '@nestjs/graphql';
@@ -930,4 +931,61 @@ At this point, Lesson does not support Student schema. So we are going to connec
    }
    ```
 
-7. Following GraphQL Query
+7. When `students` ids are passed through `createLesson` as parameter, now GraphQL successfully returns **StudentType** as result
+
+   Create dummy students for the test
+
+   ```graphql
+   mutation {
+     createLesson(
+       createLessonInput: {
+         name: "Test Class"
+         startDate: "2021-04-16T18:00:00Z"
+         endDate: "2021-04-16T18:30:00Z"
+         students: [
+           "4f92c224-1f18-4f46-9eb0-5fc8c2af1b71"
+           "dbdfb79d-b0f7-4b2e-8af1-bacedc287e34"
+           "82dca82c-2636-4f4e-b7a5-cee0970e1319"
+         ]
+       }
+     ) {
+       id
+       name
+       startDate
+       endDate
+       students {
+         firstName
+         lastName
+       }
+     }
+   }
+   ```
+
+   Here is the result
+
+   ```json
+   {
+     "data": {
+       "createLesson": {
+         "id": "00205f41-8597-42c3-94a4-d407c274261f",
+         "name": "Test Class",
+         "startDate": "2021-04-16T18:00:00Z",
+         "endDate": "2021-04-16T18:30:00Z",
+         "students": [
+           {
+             "firstName": "Marianna",
+             "lastName": "Wie"
+           },
+           {
+             "firstName": "Brandon",
+             "lastName": "Wie"
+           },
+           {
+             "firstName": "John",
+             "lastName": "Doe"
+           }
+         ]
+       }
+     }
+   }
+   ```
